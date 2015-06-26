@@ -1,45 +1,38 @@
-" vim-search: A collection of tweaks for searching.
+" search-highlight.vim: add better highlighting when searching, as well as some
+" other search-related enhancements.
 "
-" http://code.arp242.net/vim-search
+" http://code.arp242.net/vim-search-highlight
 "
 " Copyright © 2015 Martin Tournoij <martin@arp242.net>
-" See below for full copyright
+" See below for full copyright.
 "
-" Other scripts with features that look interesting:
-" http://www.vim.org/scripts/script.php?script_id=479
-" http://www.vim.org/scripts/script.php?script_id=474
 
 
 "##########################################################
 " Initialize some stuff
 scriptencoding utf-8
-if exists('g:loaded_vim_search') | finish | endif
-let g:loaded_vim_search = 1
+"if exists('g:loaded_search_highlight') | finish | endif
+let g:loaded_search_highlight = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
 
 "##########################################################
 " The default settings
-if !exists('g:vim_search_highlight')
-	let g:vim_search_highlight = 1
+if !exists('g:search_highlight')
+	let g:search_highlight = 'CurrentSearch'
 endif
-if !exists('g:vim_search_highlight_group')
-	let g:vim_search_highlight_group = 'CurrentSearch'
+if !exists('g:search_highlight_blink')
+	let g:search_highlight_blink = 0
 endif
-
-if !exists('g:vim_search_blink')
-	let g:vim_search_blink = 0
+if !exists('g:search_highlight_consistent_n')
+	let g:search_highlight_consistent_n = 1
 endif
-if !exists('g:vim_search_highlight_pattern')
-	let g:vim_search_blink_pattern = [['ErrorMsg', 100]]
+if !exists('g:search_highlight_dont_move_star')
+	let g:search_highlight_dont_move_star = 1
 endif
-
-if !exists('g:vim_search_consistent_n')
-	let g:vim_search_consistent_n = 1
-endif
-if !exists('g:vim_search_dont_move_star')
-	let g:vim_search_dont_move_star = 1
+if !exists('g:search_highlight_no_match_error')
+	let g:search_highlight_no_match_error = 1
 endif
 
 " This is a hack to set the CurrentSearch highlight group, but only if undefined
@@ -60,44 +53,45 @@ fun! s:set_highlight()
 	endif
 endfun
 call s:set_highlight()
-augroup vim_search
+augroup search_highlight
 	autocmd!
 	autocmd ColorScheme * call s:set_highlight()
 augroup end
 
-" We need this setting
-if !&wildcharm
-	set wildcharm=<C-z>
-endif
+if !&wildcharm | set wildcharm=<C-z> | endif
 
 
 "##########################################################
 " Mappings
 " We need to override all these mappings because we want to call
-" VimSearchHighlight() after jumping the cursor.
+" vim_search_highlight#highlight() after jumping the cursor.
 
 " With thanks to romainl: http://vi.stackexchange.com/q/3180/51
 fun! IsSearch()
 	return index(['/', '?'], getcmdtype()) > -1
 endfun
 
-cnoremap <expr>   <Plug>(vim-search-enter)      IsSearch() ? "<CR>:call VimSearchHighlight()<CR>" : "<CR>"
-nnoremap <silent> <Plug>(vim-search-next)       :call VimSearchNext()<CR>
-nnoremap <silent> <Plug>(vim-search-prev)       :call VimSearchPrev()<CR>
-nnoremap <silent> <Plug>(vim-search-star)       :call VimSearchStar()<CR>
-nnoremap <silent> <Plug>(vim-search-hash)       :call VimSearchHash()<CR>
-nnoremap <silent> <Plug>(vim-search-clear)      :silent! call matchdelete(b:current_search)<CR>:nohlsearch<CR><C-L>
-cnoremap <expr>   <Plug>(vim-search-jump-next)  IsSearch() ? VimSearchJump('/') : "<C-z>"
-cnoremap <expr>   <Plug>(vim-search-jump-prev)  IsSearch() ? VimSearchJump('?') : "<S-Tab>"
+cnoremap <expr>   <Plug>(search-highlight-enter)      IsSearch() ? search_highlight#start_search(getcmdtype()) : "<CR>"
+nnoremap <silent> <Plug>(search-highlight-next)       :call search_highlight#next()<CR>
+nnoremap <silent> <Plug>(search-highlight-prev)       :call search_highlight#prev()<CR>
+nnoremap <silent> <Plug>(search-highlight-star)       :call search_highlight#star()<CR>
+nnoremap <silent> <Plug>(search-highlight-hash)       :call search_highlight#hash()<CR>
+nnoremap <silent> <Plug>(search-highlight-clear)      :silent! call matchdelete(b:current_search)<CR>:nohlsearch<CR><C-L>
+cnoremap <expr>   <Plug>(search-highlight-jump-next)  IsSearch() ? search_highlight#jump('/') : "<C-z>"
+cnoremap <expr>   <Plug>(search-highlight-jump-prev)  IsSearch() ? search_highlight#jump('?') : "<S-Tab>"
 
-cmap <CR>    <Plug>(vim-search-enter)
-nmap n       <Plug>(vim-search-next)
-nmap N       <Plug>(vim-search-prev)
-nmap #       <Plug>(vim-search-hash)
-nmap *       <Plug>(vim-search-star)
-cmap <Tab>   <Plug>(vim-search-jump-next)
-cmap <S-Tab> <Plug>(vim-search-jump-prev)
-nmap <C-L>   <Plug>(vim-search-clear)
+" TODO: maybe use:
+" if !hasmapto('<Plug>TypecorrAdd')
+"     map <unique> <Leader>a  <Plug>TypecorrAdd
+" endif
+cmap <CR>    <Plug>(search-highlight-enter)
+nmap n       <Plug>(search-highlight-next)
+nmap N       <Plug>(search-highlight-prev)
+nmap #       <Plug>(search-highlight-hash)
+nmap *       <Plug>(search-highlight-star)
+cmap <Tab>   <Plug>(search-highlight-jump-next)
+cmap <S-Tab> <Plug>(search-highlight-jump-prev)
+nmap <C-L>   <Plug>(search-highlight-clear)
 
 
 "##########################################################
@@ -107,9 +101,8 @@ nmap <C-L>   <Plug>(vim-search-clear)
 " when moving to it.
 " It is inspired by the "More Instantly Better Vim" talk by Damian Conway, which
 " you can view here: https://www.youtube.com/watch?v=aHm36-na4-4
-"
 " TODO: We want to be able to pass variables to override the global defaults
-fun! VimSearchHighlight()
+fun! search_highlight#highlight()
 	" Always clear the method=highlight match
 	silent! call matchdelete(b:current_search)
 
@@ -119,8 +112,8 @@ fun! VimSearchHighlight()
 
 	" Blink; highlight each entry in the list, sleep, and remove the highlight
 	" again
-	if g:vim_search_blink
-		for [group, time] in g:vim_search_blink_pattern
+	if g:search_highlight_blink != 0
+		for [group, time] in g:search_highlight_blink
 			let l:ring = matchadd(l:group, l:pattern, 666)
 			redraw
 			execute 'sleep ' . l:time . 'm'
@@ -130,12 +123,28 @@ fun! VimSearchHighlight()
 	endif
 
 	" Highlight; add a new highlight group
-	if g:vim_search_highlight
-		let b:current_search = matchadd(g:vim_search_highlight_group, l:pattern, 666)
+	if g:search_highlight == 0
+		let b:current_search = matchadd(g:search_highlight, l:pattern, 666)
 	endif
 
+	" Make sure that we highlight after :nohlsearch
 	if &hlsearch | set hlsearch | endif
 	redraw
+endfun
+
+
+" TODO: Get this working...
+fun! search_highlight#start_search(char)
+	let l:dir = (a:char ==# '/' ? 'next' : 'prev')
+	let l:pattern = getcmdline()
+
+	if !search(l:pattern, 'nW' . (l:dir ==# 'prev' ? 'b' : ''))
+		"let l:msg = ':E38' . (l:dir ==# 'prev' ? '4' : '5') . ': Search hit '
+		"let l:msg .= (l:dir ==# 'next' ? 'BOTTOM' : 'TOP') . ' without match for: ' . l:pattern
+		return "\<CR>:call search_highlight#better_error(0, 0)\<CR>"
+	endif
+
+	return "\<CR>:call search_highlight#highlight()\<CR>"
 endfun
 
 
@@ -143,14 +152,14 @@ endfun
 " 'consistent_n' options.
 " The trick for 'consistent_n' was taken from Christian Brabandt:
 " http://vi.stackexchange.com/a/2366/51
-fun! VimSearchNext(...)
-	let l:consistent_n = (a:0 >= 1) ? a:1 : g:vim_search_consistent_n
+fun! search_highlight#next(...)
+	let l:consistent_n = (a:0 >= 1) ? a:1 : g:search_highlight_consistent_n
 	let l:_dir = (a:0 >= 2) ? a:2 : 'next'
 
 	" Don't have to modify behaviour of n/N
 	if !l:consistent_n
 		execute 'normal! ' . (l:_dir ==# 'next' ? 'n' : 'N')
-		silent call VimSearchHighlight()
+		silent call search_highlight#highlight()
 		return
 	endif
 
@@ -159,25 +168,21 @@ fun! VimSearchNext(...)
 		execute 'normal! ' . (l:_dir ==# 'next' ? 'Nn' : 'nN')[v:searchforward]
 	" If wrapscan is off (otherwise this would show as an error in the function)
 	catch /E38\(4\|5\):/
-		echohl ErrorMsg | echo s:fmt_exception(v:exception) | echohl None
+		call search_highlight#better_error(v:exception, @/)
 	endtry
 
-	call VimSearchHighlight()
+	call search_highlight#highlight()
 endfun
 
-fun! s:fmt_exception(str)
-	return a:str[stridx(a:str, ':')+1:]
-endfun
-
-fun! VimSearchPrev(...)
-	let l:consistent_n = (a:0 >= 1) ? a:1 : g:vim_search_consistent_n
-	call VimSearchNext(l:consistent_n, 'prev')
+fun! search_highlight#prev(...)
+	let l:consistent_n = (a:0 >= 1) ? a:1 : g:search_highlight_consistent_n
+	call search_highlight#next(l:consistent_n, 'prev')
 endfun
 
 
 " Modify the * and # so it won't move the cursor
-fun! VimSearchStar(...)
-	let l:dont_move = (a:0 >= 1) ? a:1 : g:vim_search_dont_move_star
+fun! search_highlight#star(...)
+	let l:dont_move = (a:0 >= 1) ? a:1 : g:search_highlight_dont_move_star
 	let l:_dir = (a:0 >= 2) ? a:2 : 'next'
 
 	let @/ = '\<' . expand('<cword>') .  '\>'
@@ -185,7 +190,7 @@ fun! VimSearchStar(...)
 	" Move cursor to the start of the match
 	let l:save_cursor = getpos('.')
 	call search(@/, 'bc')
-	call VimSearchHighlight()
+	call search_highlight#highlight()
 	call setpos('.', l:save_cursor)
 
 	if !l:dont_move
@@ -193,9 +198,9 @@ fun! VimSearchStar(...)
 	endif
 endfun
 
-fun! VimSearchHash()
-	let l:dont_move = (a:0 >= 1) ? a:1 : g:vim_search_dont_move_star
-	call VimSearchStar(l:dont_move, 'prev')
+fun! search_highlight#hash()
+	let l:dont_move = (a:0 >= 1) ? a:1 : g:search_highlight_dont_move_star
+	call search_highlight#star(l:dont_move, 'prev')
 endfun
 
 
@@ -203,32 +208,49 @@ endfun
 " if 'incearch' is enabled
 "
 " This is based on a code snippet from romainl: http://vi.stackexchange.com/a/3629/51
-fun! VimSearchJump(char)
-	" TODO: Perhaps we should just enable this setting?
+fun! search_highlight#jump(char)
+	" TODO: This is flawed, since we can shift-tab
+	let l:dir = (a:char ==# '/' ? 'next' : 'prev')
+	
+	" TODO: Perhaps we should just enable this setting (and re-set it afterwards)?
 	if !&incsearch
-		echoerr "VimSearchJump() only works if the 'incsearch' setting is enabled".
+		echoerr "search_highlight#jump() only works if the 'incsearch' setting is enabled".
 	endif
 
 	let l:pattern = getcmdline()
-	if !search(l:pattern, 'n' . (a:char == '?' ? 'b' : ''))
-		if !&wrapscan
-			echohl ErrorMsg
-			echo 'Search hit ' . (a:char ==# '/' ? 'BOTTOM' : 'TOP') . ' without match for: ' . l:pattern
-			echohl None
+	if !search(l:pattern, 'nW' . (l:dir ==# 'prev' ? 'b' : ''))
+		let l:msg = ':E38' . (l:dir ==# 'prev' ? '4' : '5') . ': Search hit '
+		let l:msg .= (l:dir ==# 'next' ? 'BOTTOM' : 'TOP') . ' without match for: ' . l:pattern
+		call search_highlight#better_error(l:msg, l:pattern)
 
+		if !&wrapscan
 			" TODO: I don't like this delay, but without it's not clear you can
 			" still type if you leave it there...
 			redraw
 			sleep 1000m
 			echo a:char . l:pattern
 			redraw
-		else
-			echohl ErrorMsg | echo "E385: search hit BOTTOM without match for: " . l:pattern | echohl None
 		endif
 		return ''
 	else
 		return "\<CR>" . a:char . "\<C-r>/"
 	endif
+endfun
+
+
+" Show 'E486: Pattern not found' when wrapscan is off and the match isn't found
+" in the document.
+" TODO: Works for n/N, but not for "/asd<CR>"
+fun! search_highlight#better_error(errstr, pattern)
+	let l:errstr = a:errstr[stridx(a:errstr, ':')+1:]
+	let l:dir = l:errstr =~# '^E385' ? 'next' : 'prev'
+
+	" No match at all in the file
+	if !search(a:pattern, 'cnW' . (l:dir == 'next' ? '' : 'b'), 0, 3000)
+		let l:errstr = 'E486: Pattern not found: ' . a:pattern
+	endif
+
+	echohl ErrorMsg | echo l:errstr | echohl None
 endfun
 
 
