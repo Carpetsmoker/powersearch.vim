@@ -75,8 +75,10 @@ nnoremap <silent> <Plug>(search-highlight-prev)       :call powersearch#prev()<C
 nnoremap <silent> <Plug>(search-highlight-star)       :call powersearch#star()<CR>
 nnoremap <silent> <Plug>(search-highlight-hash)       :call powersearch#hash()<CR>
 nnoremap <silent> <Plug>(search-highlight-clear)      :silent! call matchdelete(b:current_search)<CR>:nohlsearch<CR><C-L>
-cnoremap <silent> <expr>   <Plug>(search-highlight-jump-next)  <SID>IsSearch() ? powersearch#jump('/') : "<C-z>"
-cnoremap <silent> <expr>   <Plug>(search-highlight-jump-prev)  <SID>IsSearch() ? powersearch#jump('?') : "<S-Tab>"
+
+" TODO: Doesn't work all too well...
+"cnoremap <silent> <expr>   <Plug>(search-highlight-jump-next)  <SID>IsSearch() ? powersearch#jump('/') : "<C-d>"
+"cnoremap <silent> <expr>   <Plug>(search-highlight-jump-prev)  <SID>IsSearch() ? powersearch#jump('?') : "<S-Tab>"
 
 if !exists('g:powersearch_no_map') || empty(g:powersearch_no_map)
 	cmap <CR>    <Plug>(search-highlight-enter)
@@ -85,8 +87,8 @@ if !exists('g:powersearch_no_map') || empty(g:powersearch_no_map)
 	nmap N       <Plug>(search-highlight-prev)
 	nmap #       <Plug>(search-highlight-hash)
 	nmap *       <Plug>(search-highlight-star)
-	cmap <Tab>   <Plug>(search-highlight-jump-next)
-	cmap <S-Tab> <Plug>(search-highlight-jump-prev)
+	"cmap <Tab>   <Plug>(search-highlight-jump-next)
+	"cmap <S-Tab> <Plug>(search-highlight-jump-prev)
 	nmap <C-L>   <Plug>(search-highlight-clear)
 endif
 
@@ -297,7 +299,7 @@ unlet s:save_cpo
 
 " The MIT License (MIT)
 "
-" Copyright © 2015-2016 Martin Tournoij
+" Copyright © 2015-2017 Martin Tournoij
 "
 " Permission is hereby granted, free of charge, to any person obtaining a copy
 " of this software and associated documentation files (the "Software"), to
