@@ -42,7 +42,7 @@ endif
 " or cleared.
 " TODO: Is there a better way to do this?
 fun! s:set_highlight() abort
-	highlight CurrentSearch term=reverse ctermbg=6 guibg=Cyan
+	hi CurrentSearch term=reverse ctermbg=6 ctermfg=0 guibg=Cyan guifg=Black
 endfun
 augroup powersearch
 	autocmd!
